@@ -23,6 +23,7 @@ def imresize(m, new_shape, order=1, mode='constant'):
 
     multiplier = np.max(np.abs(m)) * 2
     m = m.astype(np.float32) / multiplier
+    print(m.shape)
     m = transform.resize(m, new_shape, order=order, mode=mode)
     m = m * multiplier
 
@@ -34,15 +35,20 @@ def imresize_nii(m, new_shape, order=1, mode='constant'):
     print("Immagine caricata")
     im = sitk.Expand(m, [2,1,1] * 3, sitk.sitkNearestNeighbor)
     print("Immagine ridimensionata")
+    origin = m.GetOrigin()
+    spacing = m.GetSpacing()
     m = sitk.GetArrayFromImage(im)
     print("immagine in array")
     data_type = m.dtype
+    
 
 
-    return m.astype(dtype=data_type)
+    return m.astype(dtype=data_type), origin, spacing
 
 def return_nii_data(img):
+    img_ = sitk.ReadImage(img)
     img = nib.load(img)
+    
     affine = img.affine 
     img = img.get_fdata() + 1024
     img = np.swapaxes(img, 0, 1)
@@ -51,18 +57,19 @@ def return_nii_data(img):
     print(img.shape)
     voxel_dimensions = np.abs(np.diag(affine[:3, :3]))
     shape0 = img.shape
-
+    origin = img_.GetOrigin()
+    spacing = img_.GetSpacing()
     if voxel_dimensions[2] < 1.5:
         img = img[:, :, ::2].copy()
         voxel_dimensions[2] *= 2
     elif voxel_dimensions[2] > 3:
+        print("AAA")
         new_size = (img.shape[0], img.shape[1], img.shape[2] * 2)
-        img = imresize_nii(img, new_size, order=0)
+        img, origin, spacing = imresize_nii(img, new_size, order=0)
         voxel_dimensions[2] /= 2
 
-    print(img.shape)
 
-    return img, voxel_dimensions, affine, shape0
+    return img, voxel_dimensions, affine, shape0, origin, spacing
 
 def catch_lungs(im3, voxel_dimensions):
     d3 = int(round(2.5 / voxel_dimensions[2]))

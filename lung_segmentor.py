@@ -37,8 +37,9 @@ class CtLungSegmentor():
 
         xyz_bounds, lung_projs = reg_utils.retrieve_projections(self.lungs_proj_file_path)
 
-        img, voxel_dimensions, affine, shape0 = reg_utils.return_nii_data(file_path)
-        print(img.shape)
+        img, voxel_dimensions, affine, shape0, origin, spacing = reg_utils.return_nii_data(file_path)
+
+        img_originale = sitk.ReadImage(file_path)
 
         lungs = reg_utils.catch_lungs(img, voxel_dimensions)
         print(lungs.astype(int))
@@ -75,11 +76,22 @@ class CtLungSegmentor():
             mean_mask += mask_out_img.astype(np.float32) / pos_val / num_nearest
         mean_mask= np.transpose(mean_mask, (2,0,1))
         mean_mask = np.swapaxes(mean_mask, 1, 2)
-        mean_mask[mean_mask>0.5]=1
-        mean_mask = sitk.GetImageFromArray(mean_mask)
+        mean_mask[mean_mask>=0.4] = 1
+        mean_mask[mean_mask<0.4] = 0
+        mean_mask = reg_utils.imresize(mean_mask, (93, 630, 630))
+        img_originale_array = sitk.GetArrayFromImage(img_originale)
+        
+        img_originale_array[mean_mask==0] = 0
 
+        mean_mask = sitk.GetImageFromArray(mean_mask)
+        mean_mask.SetOrigin(origin)
+        mean_mask.SetSpacing(spacing)
+
+        img_originale_lung = sitk.GetImageFromArray(img_originale_array)
         os.makedirs('Output', exist_ok=True)
+        os.makedirs('Output_lung', exist_ok=True)
         file_name_out = file_path.split('/')[1].split('.')[0]
+        sitk.WriteImage(img_originale_lung,'Output_lung/{}_mask_output.nii.gz'.format(file_name_out))
         sitk.WriteImage(mean_mask, 'Output/{}_mask_output.nii.gz'.format(file_name_out))
         shutil.rmtree(self.temporary_folder)
 
