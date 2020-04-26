@@ -94,7 +94,7 @@ class CtLungSegmentor():
         os.makedirs('Output_lung', exist_ok=True)
         file_name_out = file_path.split('/')[1].split('.')[0]
         print("Creazione immagini finali")
-        sitk.WriteImage(img_originale_lung,'Output_lung/{}_mask_output.nii.gz'.format(file_name_out))
+        sitk.WriteImage(img_originale_lung,'Output_lung/{}_lung_output.nii.gz'.format(file_name_out))
         sitk.WriteImage(mean_mask, 'Output/{}_mask_output.nii.gz'.format(file_name_out))
         shutil.rmtree(self.temporary_folder)
 
