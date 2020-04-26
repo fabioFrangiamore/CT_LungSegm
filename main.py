@@ -16,7 +16,7 @@ if __name__ == '__main__':
     
     elif os.path.isfile(path):
 
-        if path.lower().endswith('.nii.gz'):
+        if (path.lower().endswith('.nii.gz') or path.lower().endswith('.nii')):
             print('Processing file ' + path + '\n')
 
             ct_segmentor.process_file(path)
