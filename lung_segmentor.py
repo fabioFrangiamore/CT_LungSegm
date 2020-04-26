@@ -42,26 +42,27 @@ class CtLungSegmentor():
         img_originale = sitk.ReadImage(file_path)
 
         lungs = reg_utils.catch_lungs(img, voxel_dimensions)
-        print(lungs.astype(int))
+        #print(lungs.astype(int))
 
         projections, bounds = reg_utils.calculate_lung_projections(lungs, voxel_dimensions)
 
         distances = distance_matrix(projections, lung_projs).flatten()
         idx = np.argsort(distances)
-        print(distances)
-        print(idx)
-        print(distances[idx[0]])
+        #print(distances)
+        #print(idx)
+        #print(distances[idx[0]])
 
         ids = idx[0:num_nearest] + 1
         fixed = reg_utils.make_uint8(img[::resz, ::resz, :]).copy()
         mean_mask = (fixed * 0).astype(np.float32)
 
         mask_tot = []
+
         for j in range(num_nearest):
             path_img = os.path.join(self.resized_data_dir, 'id%03i_img.npz' % ids[j])
             data = np.load(path_img)
             moving = data[data.files[0]]
-            print(path_img)
+            
 
             path_msk = os.path.join(self.resized_data_dir, 'id%03i_msk.npz' % ids[j])
             data = np.load(path_msk)
@@ -78,7 +79,8 @@ class CtLungSegmentor():
         mean_mask = np.swapaxes(mean_mask, 1, 2)
         mean_mask[mean_mask>=0.4] = 1
         mean_mask[mean_mask<0.4] = 0
-        mean_mask = reg_utils.imresize(mean_mask, (93, 630, 630))
+        print("Confronto terminato\n\nridimensiono l'immagine")
+        mean_mask = reg_utils.imresize(mean_mask, (shape0[2], shape0[0], shape0[1]))
         img_originale_array = sitk.GetArrayFromImage(img_originale)
         
         img_originale_array[mean_mask==0] = 0
@@ -91,9 +93,22 @@ class CtLungSegmentor():
         os.makedirs('Output', exist_ok=True)
         os.makedirs('Output_lung', exist_ok=True)
         file_name_out = file_path.split('/')[1].split('.')[0]
+        print("Creazione immagini finali")
         sitk.WriteImage(img_originale_lung,'Output_lung/{}_mask_output.nii.gz'.format(file_name_out))
         sitk.WriteImage(mean_mask, 'Output/{}_mask_output.nii.gz'.format(file_name_out))
         shutil.rmtree(self.temporary_folder)
+
+
+    def process_dir(self, path):
+        print(path)
+        file_ending = '.nii.gz'
+        files = os.listdir(path)
+
+        for file in files:
+            if file.endswith(file_ending):
+                print("Segmentazione file {}".format(file))
+                self.process_file(os.path.join(path + '/' + file))
+                print("Segmentazione terminata per il file {}".format(file))
 
 
 

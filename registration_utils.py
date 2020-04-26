@@ -23,14 +23,12 @@ def imresize(m, new_shape, order=1, mode='constant'):
 
     multiplier = np.max(np.abs(m)) * 2
     m = m.astype(np.float32) / multiplier
-    print(m.shape)
     m = transform.resize(m, new_shape, order=order, mode=mode)
     m = m * multiplier
 
     return m.astype(dtype=data_type)
 
 def imresize_nii(m, new_shape, order=1, mode='constant'):
-    print("AAA")
     m = sitk.GetImageFromArray(m)
     print("Immagine caricata")
     im = sitk.Expand(m, [2,1,1] * 3, sitk.sitkNearestNeighbor)
@@ -38,7 +36,6 @@ def imresize_nii(m, new_shape, order=1, mode='constant'):
     origin = m.GetOrigin()
     spacing = m.GetSpacing()
     m = sitk.GetArrayFromImage(im)
-    print("immagine in array")
     data_type = m.dtype
     
 
@@ -54,7 +51,7 @@ def return_nii_data(img):
     img = np.swapaxes(img, 0, 1)
     img = img[::-1, :, :]
 
-    print(img.shape)
+    #print(img.shape)
     voxel_dimensions = np.abs(np.diag(affine[:3, :3]))
     shape0 = img.shape
     origin = img_.GetOrigin()
@@ -63,7 +60,6 @@ def return_nii_data(img):
         img = img[:, :, ::2].copy()
         voxel_dimensions[2] *= 2
     elif voxel_dimensions[2] > 3:
-        print("AAA")
         new_size = (img.shape[0], img.shape[1], img.shape[2] * 2)
         img, origin, spacing = imresize_nii(img, new_size, order=0)
         voxel_dimensions[2] /= 2
@@ -170,7 +166,7 @@ def affine_registration(fixed_path, moving_img_path, moving_mask_path, tmp_folde
     name_img = fixed_path.split('/')[1].split('.')[0]
     moving_name = moving_img_path.split('/')[1].split('.')[0]
     name = moving_name.split('_')[0]
-    print(moving_name)
+    print("Confronto con la figura {}".format(moving_name))
     
     my_txt = os.path.join(tmp_folder + '/' + moving_name + "/" + moving_name + '_img_affine.txt')
     txt = open(my_txt, "w")
@@ -198,7 +194,7 @@ def affine_registration(fixed_path, moving_img_path, moving_mask_path, tmp_folde
     txt = open(my_txt, "w")
     txt.write("[GLOBAL] \n\nfixed = " + fixed_path +"\nmoving = " +  tmp_folder + "/" + moving_name + "/" + moving_name +
             "_affine.nii.gz" + "\nimg_out = " + tmp_folder + "/" + moving_name + "/" + moving_name +
-            "_spline.nii.gz\nxform_out = " + tmp_folder + "/" + moving_name + "/" + moving_name + "_bspline_img_coef.txt\n\n[STAGE]\n xform = bspline\noptim=lbfgsb\nmax_its=600\nres= 4 4 2\ngrid_spac= 1 1 1\nregularization_lambda=0.1")
+            "_spline.nii.gz\nxform_out = " + tmp_folder + "/" + moving_name + "/" + moving_name + "_bspline_img_coef.txt\n\n[STAGE]\n xform = bspline\noptim=lbfgsb\nmax_its=400\nres= 4 4 2\ngrid_spac= 1 1 1\nregularization_lambda=0.1")
     txt.close()
     command = ['plastimatch', 'register' ,  my_txt]
     registration = subprocess.Popen(command, stdout=subprocess.PIPE)
