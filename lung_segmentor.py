@@ -14,13 +14,15 @@ class CtLungSegmentor():
 
     def __init__(self, config_file = 'Config/config.json',
                 resized_data_dir = 'resized_data',
-                output_file_dir = 'Output',
+                output_file_dir_mask = 'Output_Mask',
+                output_file_lung = 'Output_lung',
                 lungs_proj_file_path='Projections/lungproj_xyzb_130_py.txt',
                 temporary_folder = 'tmp'):
 
         self.config_file = config_file 
         self.resized_data_dir = resized_data_dir
-        self.output_file_dir = output_file_dir
+        self.output_file_dir_mask = output_file_dir_mask
+        self.output_file_lung = output_file_lung
         self.lungs_proj_file_path = lungs_proj_file_path
         self.temporary_folder = temporary_folder
 
@@ -93,12 +95,12 @@ class CtLungSegmentor():
         img_originale_lung = sitk.GetImageFromArray(img_originale_array)
         img_originale_lung.SetSpacing(spacing)
         img_originale_lung.SetDirection(direction)
-        os.makedirs('Output', exist_ok=True)
-        os.makedirs('Output_lung', exist_ok=True)
+        os.makedirs(self.output_file_dir_mask, exist_ok=True)
+        os.makedirs(self.output_file_lung, exist_ok=True)
         file_name_out = file_path.split('/')[1].split('.')[0]
         print("Creazione immagini finali")
-        sitk.WriteImage(img_originale_lung,'Output_lung/{}_lung_output.nii.gz'.format(file_name_out))
-        sitk.WriteImage(mean_mask, 'Output/{}_mask_output.nii.gz'.format(file_name_out))
+        sitk.WriteImage(img_originale_lung, '{}/{}_lung_output.nii.gz'.format(self.output_file_lung, file_name_out))
+        sitk.WriteImage(mean_mask,  '{}/{}_mask_output.nii.gz'.format(self.output_file_dir_mask, file_name_out))
         shutil.rmtree(self.temporary_folder)
 
 
